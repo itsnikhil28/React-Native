@@ -6,6 +6,18 @@ const UserSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  name: {
+    type: String,
+    default: '',
+  },
+  status: {
+    type: String,
+    default: 'Hey there! I am using WhatsApp.',
+  },
+  avatar: {
+    type: String,
+    default: 'https://randomuser.me/api/portraits/lego/1.jpg',
+  },
   country: {
     type: String,
   },
