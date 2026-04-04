@@ -1,4 +1,40 @@
+const express = require('express');
+const router = express.Router();
 const jwt = require('jsonwebtoken');
+const auth = require('../middleware/auth');
+const User = require('../models/User');
+
+// @route   PUT api/auth/profile
+// @desc    Update user profile
+// @access  Private
+router.get('/profile', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-otp');
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+router.put('/profile', auth, async (req, res) => {
+  const { name, status, avatar } = req.body;
+
+  try {
+    let user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+
+    if (name !== undefined) user.name = name;
+    if (status !== undefined) user.status = status;
+    if (avatar !== undefined) user.avatar = avatar;
+
+    await user.save();
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
 
 // --- Register / Login User ---
 router.post('/register', async (req, res) => {
