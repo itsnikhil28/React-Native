@@ -11,8 +11,30 @@ router.get('/', auth, async (req, res) => {
   try {
     const contacts = await Contact.find({ user: req.user.id })
       .populate('contactUser', 'name status avatar phone')
-      .sort({ createdAt: -1 });
-    res.json(contacts);
+      .lean(); // Lean for faster performance and better data manipulation
+
+    const Message = require('../models/Message');
+    const mongoose = require('mongoose');
+
+    const formattedContacts = await Promise.all(contacts.map(async (contact) => {
+        const userId = new mongoose.Types.ObjectId(req.user.id);
+        const contactId = contact.contactUser._id;
+
+        const lastMessage = await Message.findOne({
+            $or: [
+                { sender: userId, receiver: contactId },
+                { sender: contactId, receiver: userId }
+            ]
+        }).sort({ timestamp: -1 });
+
+        return {
+            ...contact,
+            lastMessage: lastMessage ? lastMessage.text : contact.contactUser.status,
+            lastMessageTime: lastMessage ? lastMessage.timestamp : null
+        };
+    }));
+
+    res.json(formattedContacts);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
